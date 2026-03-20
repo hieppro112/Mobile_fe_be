@@ -15,9 +15,34 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<apiDBContext>(option =>
-    option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-);
+
+//sql server connect
+//builder.Services.AddDbContext<apiDBContext>(option =>
+//    option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+//);
+
+//conect PostgreSQL
+builder.Services.AddDbContext<apiDBContext>(options =>
+{
+    var connectionString = Environment.GetEnvironmentVariable("postgresql://postgres:mRjMLpXQMFfauQOfrRSVpngzuqykkpKP@postgres.railway.internal:5432/railway");
+
+    if (string.IsNullOrEmpty(connectionString))
+    {
+        // 👉 chạy local
+        connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        options.UseSqlServer(connectionString);
+    }
+    else
+    {
+        // 👉 chạy Railway
+        var uri = new Uri(connectionString);
+        var userInfo = uri.UserInfo.Split(':');
+
+        var connStr = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]}";
+
+        options.UseNpgsql(connStr);
+    }
+});
 
 builder.Services.AddCors(options =>
 {
