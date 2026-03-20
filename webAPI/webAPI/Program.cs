@@ -24,7 +24,9 @@ builder.Services.AddSwaggerGen();
 //conect PostgreSQL
 builder.Services.AddDbContext<apiDBContext>(options =>
 {
-    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    //var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+
+    var databaseUrl = "postgresql://postgres:mRjMLpXQMFfauQOfrRSVpngzuqykkpKP@postgres.railway.internal:5432/railway";
 
     Console.WriteLine("DATABASE_URL: " + databaseUrl);
 
