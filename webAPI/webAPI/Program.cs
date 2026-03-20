@@ -3,6 +3,8 @@ using webAPI.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -21,8 +23,12 @@ builder.Services.AddCors(options =>
                .AllowAnyHeader();
     });
 });
+//run deloy
 
 var app = builder.Build();
+
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
