@@ -24,25 +24,29 @@ builder.Services.AddSwaggerGen();
 //conect PostgreSQL
 builder.Services.AddDbContext<apiDBContext>(options =>
 {
-    var connectionString = Environment.GetEnvironmentVariable("postgresql://postgres:mRjMLpXQMFfauQOfrRSVpngzuqykkpKP@postgres.railway.internal:5432/railway");
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
-    if (string.IsNullOrEmpty(connectionString))
+    if (string.IsNullOrEmpty(databaseUrl))
     {
-        // 👉 chạy local
-        connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        options.UseSqlServer(connectionString);
+        // chạy local
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection"),
+            sql => sql.EnableRetryOnFailure()
+        );
     }
     else
     {
-        // 👉 chạy Railway
-        var uri = new Uri(connectionString);
+        // chạy Railway PostgreSQL
+        var uri = new Uri(databaseUrl);
         var userInfo = uri.UserInfo.Split(':');
 
-        var connStr = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]}";
+        var connStr =
+            $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
 
         options.UseNpgsql(connStr);
     }
 });
+
 
 builder.Services.AddCors(options =>
 {
