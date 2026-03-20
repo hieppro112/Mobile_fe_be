@@ -11,8 +11,8 @@ using webAPI.Model;
 namespace webAPI.Migrations
 {
     [DbContext(typeof(apiDBContext))]
-    [Migration("20260320035138_FixModel")]
-    partial class FixModel
+    [Migration("20260320040036_InitDB")]
+    partial class InitDB
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -15,24 +15,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-
-//sql server connect
-//builder.Services.AddDbContext<apiDBContext>(option =>
-//    option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
-//);
-
-//conect PostgreSQL
+// ✅ DATABASE CONFIG (LOCAL + RAILWAY)
 builder.Services.AddDbContext<apiDBContext>(options =>
 {
-    //var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-
-    var databaseUrl = "postgresql://postgres:mRjMLpXQMFfauQOfrRSVpngzuqykkpKP@postgres.railway.internal:5432/railway";
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 
     Console.WriteLine("DATABASE_URL: " + databaseUrl);
 
     if (string.IsNullOrEmpty(databaseUrl))
     {
-        // chạy local
+        // 👉 LOCAL (SQL Server)
         options.UseSqlServer(
             builder.Configuration.GetConnectionString("DefaultConnection"),
             sql => sql.EnableRetryOnFailure()
@@ -40,18 +32,24 @@ builder.Services.AddDbContext<apiDBContext>(options =>
     }
     else
     {
-        // chạy Railway PostgreSQL
+        // 👉 RAILWAY (PostgreSQL)
         var uri = new Uri(databaseUrl);
         var userInfo = uri.UserInfo.Split(':');
 
         var connStr =
-            $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+            $"Host={uri.Host};" +
+            $"Port={uri.Port};" +
+            $"Database={uri.AbsolutePath.TrimStart('/')};" +
+            $"Username={userInfo[0]};" +
+            $"Password={userInfo[1]};" +
+            $"SSL Mode=Require;" +
+            $"Trust Server Certificate=true";
 
         options.UseNpgsql(connStr);
     }
 });
 
-
+// ✅ CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -64,14 +62,9 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// ❌ KHÔNG cần cái này nữa
-// builder.WebHost.UseUrls(...);
-
-// Swagger (luôn bật)
+// ✅ Swagger (luôn bật)
 app.UseSwagger();
 app.UseSwaggerUI();
-
-// app.UseHttpsRedirection();
 
 app.UseCors("AllowAll");
 
@@ -79,10 +72,20 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// ✅ AUTO MIGRATE (QUAN TRỌNG)
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<apiDBContext>();
-    db.Database.Migrate();
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<apiDBContext>();
+        Console.WriteLine("Applying migrations...");
+        db.Database.Migrate();
+        Console.WriteLine("Database migrated successfully!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Migration failed: " + ex.Message);
+    }
 }
 
 app.Run();
